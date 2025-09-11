@@ -39,7 +39,7 @@ logger = structlog.get_logger()
 # FastAPI app
 app = FastAPI(
     title="Weather AGI API",
-    description="Professional Severe Weather Forecasting API",
+    description="Professional Severe Weather Forecasting API - Created by Charles Clottin",
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",

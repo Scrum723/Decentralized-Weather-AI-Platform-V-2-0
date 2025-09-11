@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOC - Weather AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-text {
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.user {
+            align-items: flex-end;
+        }
+        
+        .message.doc {
+            align-items: flex-start;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.doc .message-bubble {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-bottom-left-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .message-sender {
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        
+        .message.user .message-sender {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .message.doc .message-sender {
+            color: #4CAF50;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        
+        .send-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+        
+        .send-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            max-width: 70%;
+        }
+        
+        .typing-indicator.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite both;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(3) { animation-delay: 0s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            } 40% {
+                transform: scale(1);
+            }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            margin: 50px 0;
+            line-height: 1.6;
+        }
+        
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .quick-question {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-question:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: rgba(255, 87, 87, 0.2);
+            border: 1px solid rgba(255, 87, 87, 0.3);
+            color: #ff9999;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 DOC</h1>
+        <p>Dynamic Operational Climatologist</p>
+        <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 5px;">Created by Charles Clottin</p>
+        <div class="status">
+            <div class="status-dot"></div>
+            <span class="status-text" id="connection-status">Connecting...</span>
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="welcome-message">
+                <h3>👋 Hello! I'm DOC, your weather AI assistant.</h3>
+                <p>Just start your message with "What's up Doc" and ask me anything about weather!</p>
+                
+                <div class="quick-questions">
+                    <div class="quick-question" onclick="sendQuickQuestion('What\\'s up Doc, what\\'s the weather like in New York?')">Weather in New York</div>
+                    <div class="quick-question" onclick="sendQuickQuestion('What\\'s up Doc, analyze tornado potential in Moore, Oklahoma')">Tornado Analysis</div>
+                    <div class="quick-question" onclick="sendQuickQuestion('What\\'s up Doc, show me severe weather outlook for Dallas, Texas')">Severe Weather Outlook</div>
+                    <div class="quick-question" onclick="sendQuickQuestion('What\\'s up Doc, explain how tornadoes form')">How Tornadoes Form</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="message-sender">DOC is thinking...</div>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea 
+                    class="input-field" 
+                    id="message-input" 
+                    placeholder="What's up Doc, tell me about the weather..."
+                    onkeydown="handleKeyPress(event)"
+                    rows="1"
+                ></textarea>
+            </div>
+            <button class="send-button" id="send-button" onclick="sendMessage()">
+                ➤
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let isConnected = false;
+        
+        // Auto-resize textarea
+        document.getElementById('message-input').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Test connection on load
+        window.addEventListener('load', async () => {
+            await checkConnection();
+        });
+        
+        async function checkConnection() {
+            try {
+                const response = await window.electronAPI.healthCheck();
+                if (response && response.success) {
+                    isConnected = true;
+                    document.getElementById('connection-status').textContent = 'Connected & Ready';
+                } else {
+                    isConnected = false;
+                    document.getElementById('connection-status').textContent = 'Connection Failed';
+                    showError('Failed to connect to weather services. Please check your internet connection.');
+                }
+            } catch (error) {
+                isConnected = false;
+                document.getElementById('connection-status').textContent = 'Offline';
+                showError('Unable to connect to weather services: ' + error.message);
+            }
+        }
+        
+        function showError(message) {
+            const messagesContainer = document.getElementById('messages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            messagesContainer.appendChild(errorDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function addMessage(sender, text, isError = false) {
+            const messagesContainer = document.getElementById('messages');
+            
+            // Remove welcome message if it exists
+            const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-sender">${sender === 'user' ? 'You' : 'DOC'}</div>
+                <div class="message-bubble ${isError ? 'error' : ''}">${formatMessage(text)}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function formatMessage(text) {
+            // Simple formatting for better readability
+            return text
+                .replace(/\\n/g, '<br>')
+                .replace(/\\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+        
+        function showTyping() {
+            document.getElementById('typing-indicator').classList.add('show');
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        }
+        
+        function hideTyping() {
+            document.getElementById('typing-indicator').classList.remove('show');
+        }
+        
+        function toggleSendButton(enabled) {
+            const button = document.getElementById('send-button');
+            button.disabled = !enabled;
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            if (!isConnected) {
+                showError('Not connected to weather services. Please wait for connection to be established.');
+                return;
+            }
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show typing indicator
+            showTyping();
+            toggleSendButton(false);
+            
+            try {
+                // Send to DOC API
+                const response = await window.electronAPI.docChat(message);
+                
+                hideTyping();
+                toggleSendButton(true);
+                
+                if (response && response.success && response.data && response.data.doc_response) {
+                    addMessage('doc', response.data.doc_response);
+                } else {
+                    const errorMsg = response?.error || 'Sorry, I had trouble processing your request. Please try again.';
+                    addMessage('doc', errorMsg, true);
+                }
+            } catch (error) {
+                hideTyping();
+                toggleSendButton(true);
+                addMessage('doc', 'Sorry, I encountered an error: ' + error.message, true);
+            }
+        }
+        
+        function sendQuickQuestion(question) {
+            document.getElementById('message-input').value = question;
+            sendMessage();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
