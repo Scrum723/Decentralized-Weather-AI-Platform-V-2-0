@@ -442,6 +442,110 @@ RECOMMENDED ACTIONS:
 - Identify safe rooms/basements immediately
 - Stay weather aware through the evening"""
 
+async def _basic_doc_response(user_input: str, user_location: tuple = None) -> str:
+    """Basic DOC responses without OpenAI dependency"""
+    
+    # Extract location from text if not provided
+    location_coords = user_location
+    location_name = "your location"
+    
+    if user_location:
+        lat, lon = user_location
+        location_name = f"{lat:.2f}°N, {abs(lon):.2f}°W"
+    
+    # Simple pattern matching for basic responses
+    input_lower = user_input.lower()
+    
+    if "what's up doc" not in input_lower:
+        return "Hello! I'm DOC, your Dynamic Operational Climatologist. Please start your message with 'What's up Doc' to activate me!"
+    
+    # Weather analysis requests
+    if any(word in input_lower for word in ["weather", "conditions", "temperature", "forecast"]):
+        if location_coords:
+            try:
+                # Get current weather for the location
+                weather_data = await weather_engine._fetch_weather_data(location_coords[0], location_coords[1])
+                return f"""Hello! I'm DOC, and I've analyzed the weather for {location_name}:
+
+🌡️ **Temperature**: {weather_data['temperature']:.1f}°C ({weather_data['temperature']*9/5+32:.1f}°F)
+💧 **Humidity**: {weather_data['humidity']:.0f}%
+🌪️ **Wind**: {weather_data['wind_speed']:.1f} m/s from {weather_data['wind_direction']:.0f}°
+📊 **Pressure**: {weather_data['pressure']:.1f} hPa
+
+This is basic weather data. For advanced AI-powered analysis, please configure an OpenAI API key in the settings!"""
+            except:
+                return f"I'm having trouble getting weather data for {location_name} right now. Please check your internet connection!"
+        else:
+            return "I'd love to help with weather analysis! Please provide coordinates (latitude, longitude) so I can give you specific weather information for your location."
+    
+    # Tornado analysis
+    if any(word in input_lower for word in ["tornado", "twister", "rotation"]):
+        if location_coords:
+            return f"""Tornado analysis for {location_name}:
+
+🌪️ **Tornado Assessment** (Basic Mode):
+- Current atmospheric instability indicators suggest varying tornado potential
+- For detailed tornado analysis including CAPE, wind shear, and helicity calculations, please configure an OpenAI API key
+- Monitor local weather warnings and radar for real-time tornado threats
+
+⚠️ **Safety Reminder**: Always follow local emergency management guidance during severe weather events!
+
+*This is basic mode. Full DOC capabilities require OpenAI integration.*"""
+        else:
+            return "I'd be happy to analyze tornado potential! Please provide specific coordinates so I can assess the atmospheric conditions for your area of interest."
+    
+    # Hurricane analysis
+    if any(word in input_lower for word in ["hurricane", "tropical", "storm", "cyclone"]):
+        return """Hurricane Information (Basic Mode):
+
+🌀 **Tropical Weather Analysis**:
+- Hurricanes form over warm ocean waters (≥26.5°C/80°F)
+- Key factors: Low wind shear, atmospheric instability, Coriolis effect
+- Categories 1-5 based on sustained wind speeds (Saffir-Simpson scale)
+
+For real-time hurricane tracking and advanced analysis, please configure an OpenAI API key for full DOC capabilities!
+
+🔗 **Recommended Resources**:
+- National Hurricane Center: nhc.noaa.gov
+- Local emergency management alerts"""
+    
+    # General meteorology questions
+    if any(word in input_lower for word in ["how", "what", "why", "explain"]):
+        return """Hello! I'm DOC in basic mode. I can provide:
+
+📚 **Basic Weather Information**:
+- Simple weather data for specific coordinates
+- General meteorological concepts
+- Safety guidance for severe weather
+
+🤖 **For Advanced Features**:
+- Detailed atmospheric analysis
+- AI-powered weather interpretation  
+- Professional meteorological tools
+- Custom weather insights
+
+Please configure an OpenAI API key in settings to unlock my full capabilities!
+
+Try asking: "What's up Doc, what's the weather like in [location]?" with coordinates!"""
+    
+    # Location requests
+    if any(word in input_lower for word in ["in ", "for ", "at "]):
+        return "I notice you're asking about a specific location! For the best results, please provide coordinates (latitude, longitude) so I can give you precise weather data. For example: 'What's up Doc, analyze weather for 40.7128, -74.0060' (New York City coordinates)."
+    
+    # Default response
+    return """What's up! I'm DOC, your Dynamic Operational Climatologist! 
+
+🌟 **I'm currently running in basic mode**. Here's what I can help you with:
+
+💬 **Try asking me**:
+- "What's up Doc, what's the weather like at 40.7, -74.0?"
+- "What's up Doc, analyze tornado potential for my location"
+- "What's up Doc, explain how hurricanes form"
+
+📍 **Pro tip**: Include coordinates (latitude, longitude) for location-specific analysis!
+
+🔧 **For full AI capabilities**: Configure an OpenAI API key in settings to unlock advanced weather analysis, detailed forecasting, and professional meteorological tools!"""
+
 # Initialize the weather engine
 weather_engine = WeatherAGIEngine()
 
@@ -1099,21 +1203,31 @@ async def get_nasa_mars_weather():
 async def doc_chat(request: dict):
     """Chat with DOC - Dynamic Operational Climatologist"""
     try:
-        if not weather_engine.doc_agi:
-            raise HTTPException(status_code=400, detail="DOC AGI not configured - OpenAI API key required")
-        
         user_input = request.get('message', '')
         user_location = request.get('location')  # [lat, lon] or None
         
         if user_location and len(user_location) == 2:
             user_location = tuple(user_location)
         
-        response = await weather_engine.doc_agi.doc_respond(user_input, user_location)
+        # Try full DOC AGI first if available
+        if weather_engine.doc_agi:
+            try:
+                response = await weather_engine.doc_agi.doc_respond(user_input, user_location)
+                return {
+                    "doc_response": response,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "source": "DOC AGI"
+                }
+            except Exception as e:
+                logger.warning("DOC AGI failed, falling back to basic mode", error=str(e))
+        
+        # Fallback DOC without OpenAI
+        response = await _basic_doc_response(user_input, user_location)
         
         return {
             "doc_response": response,
             "timestamp": datetime.utcnow().isoformat(),
-            "source": "DOC AGI"
+            "source": "DOC Basic Mode"
         }
         
     except Exception as e:
