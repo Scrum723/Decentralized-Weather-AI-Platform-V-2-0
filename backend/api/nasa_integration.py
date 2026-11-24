@@ -2,6 +2,7 @@
 NASA API Integration
 Comprehensive NASA data including Climate, GOES Satellite, Radar, and Space Weather
 """
+import os
 import httpx
 import asyncio
 from typing import Dict, List, Optional, Any
@@ -13,8 +14,8 @@ import base64
 logger = logging.getLogger(__name__)
 
 class NASAWeatherAPI:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    def __init__(self, api_key: Optional[str] = None):
+        self.api_key = api_key or os.getenv("NASA_API_KEY")
         self.earth_data_url = "https://api.nasa.gov/planetary/earth"
         self.climate_url = "https://api.nasa.gov/planetary/apod"  # Will use actual climate endpoints
         self.goes_url = "https://api.nasa.gov/EPIC/api"
