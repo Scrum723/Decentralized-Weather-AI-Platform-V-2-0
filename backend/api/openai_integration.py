@@ -2,6 +2,7 @@
 OpenAI Integration for Weather AGI System
 Enhanced AI analysis and natural language weather interpretation
 """
+import os
 import openai
 import json
 from typing import Dict, Any, List
@@ -283,10 +284,13 @@ async def test_openai_integration(api_key: str):
     return enhanced_analysis
 
 if __name__ == "__main__":
-    # Test with your OpenAI API key
-    OPENAI_KEY = "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"
-    
+    # Test with OPENROUTER_API_KEY from the environment
+    OPENAI_KEY = os.getenv("OPENROUTER_API_KEY")
+
     async def main():
+        if not OPENAI_KEY:
+            print("OPENROUTER_API_KEY is not set; skipping test.")
+            return
         result = await test_openai_integration(OPENAI_KEY)
         print("OpenAI Enhanced Weather Analysis:")
         print(json.dumps(result, indent=2, default=str))

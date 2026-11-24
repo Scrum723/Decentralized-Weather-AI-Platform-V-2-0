@@ -177,20 +177,22 @@ class WeatherAGIEngine:
         try:
             self.api_keys = api_keys
             
-            # Initialize OpenAI integration if key is provided
-            if 'openai' in api_keys and api_keys['openai']:
-                self.openai_engine = WeatherAGIWithOpenAI(api_keys['openai'])
+            # Initialize OpenAI integration if a request or env key is provided
+            openai_key = api_keys.get("openai") or os.getenv("OPENROUTER_API_KEY")
+            if openai_key:
+                self.openai_engine = WeatherAGIWithOpenAI(openai_key)
             
             # Initialize Weather Underground API if key is provided
             if 'weather_underground' in api_keys and api_keys['weather_underground']:
                 self.weather_underground_api = WeatherUndergroundAPI(api_keys['weather_underground'])
             
-            # Initialize NASA API if key is provided
-            if 'nasa' in api_keys and api_keys['nasa']:
-                self.nasa_api = NASAWeatherAPI(api_keys['nasa'])
+            # Initialize NASA API if a request or env key is provided
+            nasa_key = api_keys.get("nasa") or os.getenv("NASA_API_KEY")
+            if nasa_key:
+                self.nasa_api = NASAWeatherAPI(nasa_key)
             
             # Initialize DOC AGI if OpenAI key is available
-            if 'openai' in api_keys and api_keys['openai']:
+            if openai_key:
                 weather_api_dict = {
                     'nws_api': self.nws_api,
                     'nasa_api': self.nasa_api,
@@ -198,7 +200,7 @@ class WeatherAGIEngine:
                     'noaa_climate_api': self.noaa_climate_api,
                     'noaa_ramadda_api': self.noaa_ramadda_api
                 }
-                self.doc_agi = DOCMeteorologicalAGI(api_keys['openai'], weather_api_dict)
+                self.doc_agi = DOCMeteorologicalAGI(openai_key, weather_api_dict)
             
             self.initialized = True
             logger.info("Weather AGI system initialized", 
