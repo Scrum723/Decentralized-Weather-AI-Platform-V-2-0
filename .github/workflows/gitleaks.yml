@@ -1,0 +1,20 @@
+name: gitleaks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
+            | tar -xz gitleaks
+
+      # Working-tree scan only (no history rewrite; exposed keys must be rotated)
+      - name: Scan working tree for secrets
+        run: ./gitleaks detect --no-git --source . --verbose

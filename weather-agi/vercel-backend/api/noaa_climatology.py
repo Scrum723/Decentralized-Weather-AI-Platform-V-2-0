@@ -6,6 +6,7 @@ Service API: https://www.ncei.noaa.gov/access/services/search/v1/data
 Data Endpoint: https://www.ncei.noaa.gov/access/services/data/v1
 """
 
+import os
 import httpx
 import json
 from typing import Dict, List, Any, Optional, Tuple
@@ -23,9 +24,8 @@ class NOAAClimatologyAPI:
         self.search_url = "https://www.ncei.noaa.gov/access/services/search/v1/data"
         self.data_url = "https://www.ncei.noaa.gov/access/services/data/v1"
         
-        # User credentials
         self.email = "cclot1@brockport.edu"
-        self.token = "jctMonoqztOLZcNratRpEzpcZdWnIYEt"
+        self.token = os.getenv("NOAA_TOKEN")
         
         # Headers for API requests
         self.headers = {
