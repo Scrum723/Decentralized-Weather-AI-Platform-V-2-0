@@ -35,9 +35,9 @@ A comprehensive, AI-enhanced meteorological analysis platform for professional w
 ### **Prerequisites**
 - Node.js 18+
 - Python 3.11+
-- Your API keys (already configured!):
-  - NASA: `MvVMDunbrgUhgvtCbkSkVRlVE5vh1AsV1a3K8cfD`
-  - OpenAI: `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`
+- API keys (set these as environment variables; do not commit real values):
+  - NASA: `your_nasa_api_key_here` (`NASA_API_KEY`)
+  - OpenRouter: `your_openrouter_api_key_here` (`OPENROUTER_API_KEY`)
 
 ### **1. Web Frontend**
 ```bash
